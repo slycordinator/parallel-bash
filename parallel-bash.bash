@@ -93,6 +93,15 @@ _process_arguments::parallel-bash() {
             ;;
     esac
 
+    # when total commands is not divisible by $NO_OF_JOBS
+    # some remain unprocessed in the end
+    if [ -n "${cmds}" ]; then
+        job=0
+        # all hail the eval lord
+        eval "${cmds}" &
+        cmds=""
+    fi
+
     # this is probably pointless as the processes might be already completed before even reaching this point
     # todo: fix this
     declare status
