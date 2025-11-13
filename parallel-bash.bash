@@ -60,6 +60,15 @@ _setup_arguments::parallel-bash() {
 _process_arguments::parallel-bash() {
     declare job=0 cmds=""
 
+    # function for running stored processes
+    # runs tasks from cmds variable and resets cmds plus job count to default
+    _execute::_run_processes::parallel-bash() {
+        job=0
+        # all hail the eval lord
+        eval "${cmds}" &
+        cmds=""
+    }
+
     # a wrapper function
     # takes 1 argument
     _execute::_process_arguments::parallel-bash() {
@@ -69,12 +78,7 @@ _process_arguments::parallel-bash() {
         # `;` is added to last to prevent stopping the execution because of a failed process
         export "cmds+=${1:-:} ; "
         # when job == no_of_jobs_final, then reset it and then again start appending from job 1
-        [[ ${job} -eq "${NO_OF_JOBS}" ]] && {
-            job=0
-            # all hail the eval lord
-            eval "${cmds}" &
-            cmds=""
-        }
+        [[ ${job} -eq "${NO_OF_JOBS}" ]] && _execute::_run_processes::parallel-bash
     }
 
     # iterate over both input arrays
@@ -95,12 +99,7 @@ _process_arguments::parallel-bash() {
 
     # when total commands is not divisible by $NO_OF_JOBS
     # some remain unprocessed in the end
-    if [ -n "${cmds}" ]; then
-        job=0
-        # all hail the eval lord
-        eval "${cmds}" &
-        cmds=""
-    fi
+    [ -n "${cmds}" ] && _execute::_run_processes::parallel-bash
 
     # this is probably pointless as the processes might be already completed before even reaching this point
     # todo: fix this
